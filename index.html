@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Local Web Builder</title>
+<style>
+  :root{--bg:#080d18;--panel:#111827;--line:#28334b;--text:#f4f7ff;--muted:#9caac4;--accent:#5f91ff;--ok:#4fd18a}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at top,#172441,#080d18 50%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .app{max-width:1450px;margin:auto;padding:18px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#5f91ff,#9d7eff);font-weight:900}
+  h1{font-size:22px;margin:0}.sub{font-size:13px;color:var(--muted)}
+  .toolbar,.actions{display:flex;gap:8px;flex-wrap:wrap}
+  button,.file{border:1px solid var(--line);background:#17223a;color:var(--text);border-radius:10px;padding:9px 12px;cursor:pointer}
+  button.primary{background:#356fe0;border-color:#4e81ee}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:rgba(17,24,39,.9);border:1px solid var(--line);border-radius:15px;overflow:hidden}
+  .title{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line)}
+  textarea{display:block;width:100%;height:530px;resize:vertical;border:0;outline:0;background:#060a12;color:#dbe7ff;padding:15px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  iframe{display:block;width:100%;height:530px;border:0;background:white}
+  .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px}
+  .status{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#777}.dot.ok{background:var(--ok);box-shadow:0 0 9px #4fd18a}
+  .rooms{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}
+  .body{padding:13px}.line{display:flex;gap:8px;align-items:center}.line input{min-width:0;flex:1}
+  input{border:1px solid var(--line);background:#09101f;color:var(--text);border-radius:10px;padding:10px;outline:none}
+  .code{font:800 19px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px}
+  .muted{font-size:12px;color:var(--muted);line-height:1.5}.note{margin-top:9px;padding:9px;border:1px solid #4c4021;background:#201a0b;color:#e7d38e;border-radius:10px;font-size:12px}
+  .pill{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#17223a}
+  @media(max-width:900px){.grid,.rooms{grid-template-columns:1fr}textarea,iframe{height:450px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo">&lt;/&gt;</div>
+    <div><h1>Local Web Builder</h1><div class="sub">Creá y serví sitios HTTP directamente en tu red local.</div></div>
+  </div>
+  <div class="toolbar">
+    <label class="file">📁 Cargar .html <input id="file" type="file" accept=".html,.htm,text/html" hidden></label>
+    <button id="save">💾 Guardar HTML</button>
+    <button id="new">🧹 Nuevo</button>
+  </div>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <div class="title"><strong>📝 Editor HTML</strong><span class="pill" id="bytes">0 bytes</span></div>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div class="bar">
+      <button class="primary" id="preview">👀 Actualizar preview</button>
+      <button id="push">🔄 Publicar ahora</button>
+      <div class="status"><span id="dot" class="dot"></span><span id="status">Servidor local</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="title"><strong>👀 Vista previa</strong><span class="pill">sandbox</span></div>
+    <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals"></iframe>
+    <div class="bar"><button id="open">↗ Abrir sitio publicado</button></div>
+  </section>
+</div>
+
+<div class="rooms">
+  <section class="card">
+    <div class="title"><strong>🌐 Sala HTTP local</strong><span class="pill" id="role">Sin sala</span></div>
+    <div class="body">
+      <div class="line">
+        <input id="room" class="code" maxlength="8" placeholder="ABC123">
+        <button class="primary" id="create">✨ Crear</button>
+        <button id="join">Entrar</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="line">
+        <input id="link" readonly placeholder="Enlace de la sala">
+        <button id="copy">🔗 Copiar</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="line">
+        <input id="siteLink" readonly placeholder="URL HTTP del sitio publicado">
+        <button id="copySite">🌐 Copiar URL</button>
+      </div>
+      <div class="muted" style="margin-top:9px">
+        Compartí la URL HTTP del sitio con otra persona conectada a la misma Wi‑Fi.
+        El editor publica cambios y los usuarios conectados reciben el HTML nuevo por WebSocket.
+      </div>
+      <div class="note">Este proyecto es local: las salas viven en la memoria del servidor Python y se borran al detenerlo.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="title"><strong>📡 Red</strong><span class="pill">HTTP + WebSocket</span></div>
+    <div class="body">
+      <div class="muted" id="network">Detectando IP local…</div>
+      <div style="height:8px"></div>
+      <div class="actions">
+        <button id="refreshIp">↻ Actualizar IP</button>
+        <button id="makeRoom">✨ Crear sala rápida</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="muted" style="text-align:center;padding:15px 3px">Local Web Builder • servidor Python local • sin hosting público</div>
+</div>
+
+<script>
+const editor=document.getElementById('editor'), frame=document.getElementById('frame');
+const file=document.getElementById('file'), room=document.getElementById('room');
+const link=document.getElementById('link'), siteLink=document.getElementById('siteLink');
+const statusEl=document.getElementById('status'), dot=document.getElementById('dot');
+const role=document.getElementById('role'), bytes=document.getElementById('bytes');
+let ws=null, code='', localIp=location.hostname, port=location.port||'8080', timer=null;
+
+const DEFAULT=`<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi sitio</title></head>
+<body style="font-family:system-ui;display:grid;place-items:center;min-height:100vh">
+<main><h1>🚀 Mi primer sitio local</h1><p>Servido por Local Web Builder.</p></main>
+</body></html>`;
+
+function render(){frame.srcdoc=editor.value;bytes.textContent=new Blob([editor.value]).size.toLocaleString('es-ES')+' bytes'}
+function localUrl(){return `http://${localIp}:${port}`}
+function updateNetwork(){document.getElementById('network').textContent=`Servidor: ${localUrl()}`}
+function setState(t,ok=false){statusEl.textContent=t;dot.className='dot'+(ok?' ok':'')}
+
+async function createRoom(){
+  const r=await fetch('/api/rooms',{method:'POST'});
+  const data=await r.json();
+  await joinRoom(data.code,true);
+}
+async function joinRoom(c,owner=false){
+  c=String(c||'').toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,8);
+  if(!c)return alert('Escribí un código de sala.');
+  const check=await fetch('/api/rooms/'+encodeURIComponent(c));
+  if(!check.ok)return alert('La sala no existe.');
+  code=c;room.value=c;
+  link.value=`${location.origin}/?room=${encodeURIComponent(c)}`;
+  siteLink.value=`${location.origin}/site/${encodeURIComponent(c)}`;
+  role.textContent=owner?'Creador':'Visitante';
+  connectWs();
+}
+function connectWs(){
+  if(ws){try{ws.close()}catch{}}
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}/ws/${encodeURIComponent(code)}`);
+  ws.onopen=()=>{
+    setState('Sala conectada',true);
+    if(location.search.includes('room=')) role.textContent='Visitante';
+  };
+  ws.onmessage=e=>{
+    const data=JSON.parse(e.data);
+    if(data.type==='html' && typeof data.html==='string'){
+      editor.value=data.html;render();
+    }
+  };
+  ws.onclose=()=>setState('Sala desconectada');
+  ws.onerror=()=>setState('Error de conexión');
+}
+function publish(){
+  if(!ws || ws.readyState!==WebSocket.OPEN)return;
+  ws.send(JSON.stringify({type:'set_html',html:editor.value}));
+}
+function copyValue(input,btn){
+  if(!input.value)return;
+  navigator.clipboard?.writeText(input.value).then(()=>{const old=btn.textContent;btn.textContent='✅ Copiado';setTimeout(()=>btn.textContent=old,1000)})
+}
+editor.addEventListener('input',()=>{
+  render(); clearTimeout(timer); timer=setTimeout(publish,180);
+});
+document.getElementById('preview').onclick=render;
+document.getElementById('push').onclick=publish;
+document.getElementById('create').onclick=createRoom;
+document.getElementById('makeRoom').onclick=createRoom;
+document.getElementById('join').onclick=()=>joinRoom(room.value);
+document.getElementById('copy').onclick=()=>copyValue(link,document.getElementById('copy'));
+document.getElementById('copySite').onclick=()=>copyValue(siteLink,document.getElementById('copySite'));
+document.getElementById('open').onclick=()=>{if(siteLink.value)window.open(siteLink.value,'_blank','noopener')};
+document.getElementById('refreshIp').onclick=loadIp;
+document.getElementById('save').onclick=()=>{
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([editor.value],{type:'text/html'}));a.download='index.html';a.click();
+};
+document.getElementById('new').onclick=()=>{editor.value=DEFAULT;render();publish()};
+file.addEventListener('change',async()=>{
+  const f=file.files?.[0]; if(!f)return;
+  editor.value=await f.text();render();publish();file.value='';
+});
+async function loadIp(){
+  try{const r=await fetch('/api/local-ip');const d=await r.json();localIp=d.ip;port=d.port;updateNetwork()}
+  catch{updateNetwork()}
+}
+editor.value=DEFAULT;render();loadIp();
+const initial=new URLSearchParams(location.search).get('room');
+if(initial)joinRoom(initial,false);
+</script>
+</body>
+</html>
